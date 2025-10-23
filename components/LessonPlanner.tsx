@@ -4,10 +4,6 @@ import type { LessonPlan, Objective } from '../types';
 import { BloomLevelCognitive, BloomLevelAffective, BloomLevelPsychomotor } from '../types';
 import { SUBJECTS, GRADES, SECTIONS, PERIODS, DAYS, INTRO_TYPES, TEACHING_METHODS, TEACHING_AIDS } from '../constants';
 
-// @ts-ignore
-const { jsPDF } = window.jspdf;
-declare const html2canvas: any;
-
 interface LessonPlannerProps {
     onBackToWelcome: () => void;
     lesson: LessonPlan | null;
@@ -151,6 +147,11 @@ const LessonPlanner: React.FC<LessonPlannerProps> = ({ onBackToWelcome, lesson }
             }
     
             try {
+                // @ts-ignore
+                const { jsPDF } = window.jspdf;
+                // @ts-ignore
+                const html2canvas = window.html2canvas;
+
                 const canvas = await html2canvas(printableArea, { scale: 2.5, useCORS: true });
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
