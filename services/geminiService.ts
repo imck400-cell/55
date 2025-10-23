@@ -4,9 +4,10 @@ import type { LessonPlan } from '../types';
 const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
 // This function converts a lesson plan text into a structured JSON object.
-export async function analyzeLessonPlanWithGemini(lessonText: string, apiKey: string): Promise<Partial<LessonPlan>> {
+export async function analyzeLessonPlanWithGemini(lessonText: string): Promise<Partial<LessonPlan>> {
+    const apiKey = process.env.API_KEY;
     if (!apiKey) {
-        throw new Error("لم يتم توفير مفتاح الواجهة البرمجية (API Key). يرجى إدخاله للمتابعة.");
+        throw new Error("لم يتم تكوين مفتاح Gemini API. يرجى التأكد من إعداده في متغيرات بيئة النشر.");
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -95,7 +96,7 @@ export async function analyzeLessonPlanWithGemini(lessonText: string, apiKey: st
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         if (error instanceof Error && error.message.includes('API key not valid')) {
-             throw new Error("مفتاح API غير صالح. يرجى التحقق من المفتاح الذي أدخلته.");
+             throw new Error("مفتاح API غير صالح. يرجى التحقق من المفتاح في إعدادات البيئة الخاصة بك.");
         }
         throw new Error("فشل تحليل خطة الدرس. يرجى المحاولة مرة أخرى أو التحقق من مفتاح API.");
     }

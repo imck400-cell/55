@@ -89,20 +89,12 @@ const LessonPlanner: React.FC<LessonPlannerProps> = ({ onBackToWelcome, lesson }
     const [error, setError] = useState<string | null>(null);
     const [isPrinting, setIsPrinting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [apiKey, setApiKey] = useState<string>('');
-    const [apiKeyInput, setApiKeyInput] = useState<string>('');
     
     const titleStyle = { textShadow: '1px 1px 1px rgba(0,0,0,0.1)' };
     const mainTitleStyle = { textShadow: '2px 2px 3px rgba(0,0,0,0.2)', fontFamily: "'Changa', sans-serif", fontWeight: 700 };
 
 
     useEffect(() => {
-        const savedApiKey = localStorage.getItem('geminiApiKey');
-        if (savedApiKey) {
-            setApiKey(savedApiKey);
-            setApiKeyInput(savedApiKey);
-        }
-
         if (lesson) {
             setLessonPlan(lesson);
         } else {
@@ -194,21 +186,7 @@ const LessonPlanner: React.FC<LessonPlannerProps> = ({ onBackToWelcome, lesson }
         }, 100);
     };
 
-    const handleSaveApiKey = () => {
-        if (apiKeyInput.trim()) {
-            localStorage.setItem('geminiApiKey', apiKeyInput.trim());
-            setApiKey(apiKeyInput.trim());
-            alert('تم حفظ مفتاح API بنجاح!');
-        } else {
-            alert('الرجاء إدخال مفتاح API صالح.');
-        }
-    };
-
     const handleAnalyze = async () => {
-        if (!apiKey) {
-            setError("الرجاء إدخال وحفظ مفتاح Gemini API أولاً.");
-            return;
-        }
         if (!inputText.trim()) {
             setError("الرجاء إدخال نص خطة الدرس للتحليل.");
             return;
@@ -216,16 +194,16 @@ const LessonPlanner: React.FC<LessonPlannerProps> = ({ onBackToWelcome, lesson }
         setIsLoading(true);
         setError(null);
         try {
-            const partialPlan = await analyzeLessonPlanWithGemini(inputText, apiKey);
+            const partialPlan = await analyzeLessonPlanWithGemini(inputText);
             setLessonPlan(prev => ({
-                ...initialLessonPlan,
+                ...prev,
                 ...partialPlan,
-                id: prev.id,
-                emblem1: prev.emblem1,
-                emblem2: prev.emblem2,
-                educationArea: partialPlan.educationArea || prev.educationArea,
-                schoolName: partialPlan.schoolName || prev.schoolName,
-                teacherName: partialPlan.teacherName || prev.teacherName,
+                 // Ensure arrays are properly merged and don't become undefined
+                cognitiveObjectives: partialPlan.cognitiveObjectives || prev.cognitiveObjectives,
+                psychomotorObjectives: partialPlan.psychomotorObjectives || prev.psychomotorObjectives,
+                affectiveObjectives: partialPlan.affectiveObjectives || prev.affectiveObjectives,
+                teachingMethods: partialPlan.teachingMethods && partialPlan.teachingMethods.length > 0 ? partialPlan.teachingMethods : prev.teachingMethods,
+                teachingAids: partialPlan.teachingAids && partialPlan.teachingAids.length > 0 ? partialPlan.teachingAids : prev.teachingAids,
             }));
         } catch (err) {
             if (err instanceof Error) {
@@ -319,32 +297,12 @@ const LessonPlanner: React.FC<LessonPlannerProps> = ({ onBackToWelcome, lesson }
             {!isPrinting && (
                 <section className="max-w-7xl mx-auto mb-4 p-4 bg-sky-50 border border-sky-200 rounded-lg">
                     <h2 className="text-xl font-semibold text-sky-800 mb-2">التحليل باستخدام الذكاء الاصطناعي</h2>
-                    <div className="mb-3 p-3 bg-sky-100 border border-sky-300 rounded-md">
-                        <label htmlFor="apiKey" className="block text-sm font-bold text-sky-900 mb-1">
-                            مفتاح Gemini API
-                        </label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                id="apiKey"
-                                type="password"
-                                value={apiKeyInput}
-                                onChange={(e) => setApiKeyInput(e.target.value)}
-                                placeholder="أدخل مفتاح API الخاص بك هنا"
-                                className="flex-grow p-2 border border-slate-300 rounded-md text-sm"
-                                aria-describedby="apiKeyHelp"
-                            />
-                            <button onClick={handleSaveApiKey} className="bg-sky-800 text-white font-semibold py-2 px-4 rounded-md hover:bg-sky-900 transition-colors">
-                                حفظ المفتاح
-                            </button>
-                        </div>
-                        <p id="apiKeyHelp" className="text-xs text-slate-600 mt-1">
-                            مفتاحك يُحفظ في متصفحك فقط ولن يتم مشاركته. مطلوب لتفعيل ميزة التحليل بالذكاء الاصطناعي.
-                        </p>
-                    </div>
+                    <p className="text-sm text-slate-600 mb-2">
+                        الصق محتوى الدرس في المربع أدناه، وسيقوم الذكاء الاصطناعي باستخلاص المعلومات وتعبئة الحقول تلقائيًا.
+                    </p>
                     <textarea className="w-full h-24 p-2 border border-slate-300 rounded-md font-bold" placeholder="مثال: عنوان الدرس: الفاعل. المادة: لغة عربية. الصف: الخامس..." value={inputText} onChange={(e) => setInputText(e.target.value)} />
                     <div className="mt-2 flex items-center gap-4">
-                        <button onClick={handleAnalyze} disabled={isLoading || !apiKey} className="bg-sky-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-sky-700 disabled:bg-sky-300 disabled:cursor-not-allowed transition-all flex items-center">{isLoading ? 'جاري التحليل...' : 'تحليل النص'}</button>
-                        {!apiKey && <p className="text-amber-700 font-semibold">الرجاء إدخال مفتاح API لتفعيل التحليل.</p>}
+                        <button onClick={handleAnalyze} disabled={isLoading} className="bg-sky-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-sky-700 disabled:bg-sky-300 disabled:cursor-not-allowed transition-all flex items-center">{isLoading ? 'جاري التحليل...' : 'تحليل النص'}</button>
                         {error && <p className="text-red-600 font-semibold">{error}</p>}
                     </div>
                 </section>
